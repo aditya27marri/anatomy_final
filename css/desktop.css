@@ -1,0 +1,88 @@
+			body {
+				color: #000;
+				font-size:1em;
+				text-align:center;
+				background-image: radial-gradient(ellipse at center center , rgb(138, 148, 163) 0%, rgb(33, 38, 43) 100%);
+				background-color: #fff;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				position: absolute;
+				top: 0px; width: 33%;
+				background-color: #222;
+				opacity: 0.9;
+				color: #eee;
+				text-align: justify;
+				margin:1%;
+				transition: all 0.5s ease;
+			}
+
+			a {
+				color: #0af;
+			}
+			.folder:nth-of-type(2){
+				display: none;
+
+			}
+			header{
+				position: fixed;
+				color: #eee;
+				background-color: #111;
+				opacity: 0.9;
+				width: 100%;
+			}
+			header img{
+				display: none;
+				margin: 0;
+			}			
+			#language{
+				position: absolute;
+			    right: 15px;
+			    text-align: left;
+			    top: 244px;
+			    width: 295px;
+			    background-color: #111;
+			    color: #eee;
+				border-left: 3px solid #e61d5f;			    
+			}
+			#language ul{
+				list-style: none;
+				margin: 0;
+			}
+			#language ul li{
+				display: block;
+				border-bottom: 1px solid #2c2c2c;
+			}
+			#language a{
+				color: #fff;
+				cursor: pointer;
+			}
+			#language a:hover{
+				background-color: #000;
+			}
+			#ljs-widget{
+				display: none;
+			}
+			#language p{
+				color: #eee;
+				text-align: center;
+				border-bottom: 1px solid #2c2c2c;			
+			}
+			#icon {
+    padding: 1%;
+    width: 10%;
+}
+#volumeimg{
+	position: absolute;
+	left: 0;
+	top:40%;
+	background-color: #222;
+				opacity: 0.9;
+				color: #eee;
+}
+#iconstop{
+	    padding: 1%;
+    width: 10%;
+}

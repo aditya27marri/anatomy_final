@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+    <head>
+		<meta charset="utf-8">
+        <title>Human Body Anatomy</title>
+        <meta name="description" content="The Digital Human is a virtual 3D body that brings to life thousands of medically accurate anatomy objects and health conditions in an interactive Web-based platform" >
+        <meta name="keywords" content="Digital Human, Explore the Body in 3D, virtual 3D body, learning anatomy, anatomy education, anatomy textbooks, health visualization, 3D anatomy, interactive anatomy, online anatomy, anatomy apps" >   <link href="images/favicon.ico" type="image/x-icon" rel="shortcut icon">            
+        <meta content="text/html; charset=UTF-8" http-equiv="Content-type">
+        <meta name="Publisher" content="Digital Human" >
+        <meta name="Copyright" content="2015" >
+        <meta name="Author"content="Digital Human" >
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link rel="stylesheet" media='screen and (min-width: 481px)' href="css/desktop.css"/>
+		<link rel="stylesheet" media='screen and (max-width: 480px)' href="css/mobile.css"/> 
+		<style>
+			@media print {
+				header{display: none;}
+			}
+		</style>		
+	</head>
+
+	<body>
+		<header>
+            <h1>Human Body Anatomy</h1>
+            <img id="menu" src="images/menu.png" alt="menu" > 
+        </header> 
+		<div id="container"></div>
+		<div id="language">
+			<p>Change language</p>
+			<ul>
+				<li><a onclick="changelanguage('es')">Español</a></li>
+				<li><a onclick="changelanguage('zh')">中文</a></li>
+				<li><a onclick="changelanguage('en')">English</a></li>								
+			</ul>	
+		</div>	
+		<div id="info">
+		
+		</div>
+		<div id="volumeimg"></div>
+		<script src="js/bodydata.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+		<script src="build/three.min.js"></script>
+		
+		<script src="js/UCSCharacter.js"></script>
+
+		<script src="js/Detector.js"></script>
+
+		
+		<script src='js/libs/dat.gui.min.js'></script>
+				
+		<script src="js/controls/OrbitControls.js"></script>
+		
+		<script>
+			
+			var SCREEN_WIDTH = window.innerWidth;
+			var SCREEN_HEIGHT = window.innerHeight;
+
+			var container;
+
+			var camera, scene;
+			var renderer;
+			
+			var mesh;
+
+			var mouseX = 0, mouseY = 0;
+
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+
+			var clock = new THREE.Clock();
+			
+			var gui, skinConfig, morphConfig;
+				
+			document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+
+			init();
+			animate();
+
+			function init() {
+
+				container = document.getElementById( 'container' );
+
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 100000 );
+				camera.position.set( 2000, 5000, 5000 );
+
+				scene = new THREE.Scene();
+
+				// LIGHTS
+
+				var light = new THREE.DirectionalLight( 0xffffff, 1 );
+				light.position.set( 0, 140, 500 );
+				light.position.multiplyScalar( 1.1 );
+				light.color.setHSL( 0.6, 0.075, 1 );
+				scene.add( light );
+
+				//
+
+				var light = new THREE.DirectionalLight( 0xffffff, 1 );
+				light.position.set( 0, -1, 0 );
+				scene.add( light );
+
+				// RENDERER
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setClearColor( 0xffffff );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
+				container.appendChild( renderer.domElement );
+
+				// CHARACTER
+
+				character = new THREE.UCSCharacter();
+				character.onLoadComplete = function() {
+					console.log( "Load Complete" );
+					console.log( character.numSkins + " skins and " + character.numMorphs + " morphtargets loaded." );
+					gui = new dat.GUI();
+					setupSkinsGUI();
+					setupMorphsGUI();
+					gui.width = 300;
+					gui.open();
+				}
+				
+				var loader = new THREE.XHRLoader();
+				loader.load("models/skinned/UCS_config.json", function ( text ) {
+
+					var config = JSON.parse( text );
+					character.loadParts( config );
+					scene.add( character.root );
+
+				} );
+
+				window.addEventListener( 'resize', onWindowResize, false );
+				
+				controls = new THREE.OrbitControls( camera, renderer.domElement );
+				controls.center.set( 0, 3000, 0);
+
+				controls.addEventListener( 'change', render );
+
+			}
+			
+			function setupSkinsGUI() {
+			
+				var skinGui = gui.addFolder( "Skins" );
+				
+				skinConfig = {
+					wireframe: false
+				};
+				
+				var skinCallback = function( index ) {
+					return function () {
+						character.setSkin( index );
+					};
+				}
+
+				for ( var i = 0; i < character.numSkins; i++ ) {
+					var name = character.skins[ i ].name;
+					skinConfig[ name ] = skinCallback( i );
+				}
+				
+				for ( var i = 0; i < character.numSkins; i++ ) {
+					skinGui.add( skinConfig, character.skins[i].name );
+				}
+				
+				skinGui.open();
+
+			}
+			
+			function setupMorphsGUI() {
+				
+				var morphGui = gui.addFolder( "Morphs" );
+				
+				morphConfig = {
+				};
+				
+				var morphCallback = function( index ) {
+					return function () {
+						character.updateMorphs( morphConfig );
+					}
+				}
+				
+				for ( var i = 0; i < character.numMorphs; i ++ ) {
+					var morphName = character.morphs[ i ];
+					morphConfig[ morphName ] = 0;
+				}
+				
+				for ( var i = 0; i < character.numMorphs; i ++ ) {
+					morphGui.add( morphConfig, character.morphs[ i ] ).min( 0 ).max( 100 ).onChange( morphCallback( i ) );
+				}
+				
+				morphGui.open();
+			
+			}
+
+			function onWindowResize() {
+
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function onDocumentMouseMove( event ) {
+
+				mouseX = ( event.clientX - windowHalfX ) * 10;
+				mouseY = ( event.clientY - windowHalfY ) * 10;
+
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				controls.update();
+
+				render();
+
+			}
+
+			function render() {
+
+				var delta = 0.75 * clock.getDelta();
+
+				// update skinning
+
+				THREE.AnimationHandler.update( delta );
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+		 <script>
+
+			window.onload=function(){
+			  meSpeak.loadConfig("js/mespeak_config.json");
+			  meSpeak.mylangpath = {
+
+			  'english': 'voices/en/en.json',
+			  'spanish':"voices/es-la.json",
+			  'chinees': "voices/zh.json"
+
+			  };
+
+			  console.log(meSpeak.mylangpath);
+			}
+			 var idspeak ;
+			 var callback =  function (){
+			console.log("calling back in loadVoice function");
+			var texttospeak = document.getElementById('info').innerHTML;
+			console.log(texttospeak);
+			 idspeak =  meSpeak.speak(texttospeak);
+			 }
+
+			 function stopspeak(){
+
+			 	//var id = meSpeak.speak('hello world');
+			 	if(idspeak){
+				meSpeak.stop(idspeak);
+			    }
+			 }
+
+			 function loadsound(lang,callback){
+			  if(!lang || lang==''){
+			    lang = "english";
+			  }
+			  console.log(meSpeak['mylangpath'][lang]);
+			meSpeak.loadVoice(meSpeak['mylangpath'][lang],callback);
+			//callback();
+
+			}
+			  var callme = function(){
+			  		lang= $('curlang').val();
+			  		//alert(lang);
+			        loadsound(lang,callback);
+			  }
+
+
+
+
+			    function loadVoice(id,callback) {
+			      var fname="voices/"+id+".json";
+			      console.log("fname");
+			      meSpeak.loadVoice(fname, voiceLoaded);
+			      callback();
+			    }
+
+			    function changelanguage(lan){
+
+			    	var langug = {'es': 'spanish', 'en':'english', 'zh':'chinees'};
+			    	//alert(lan);
+			    	setTimeout(Localize.setLanguage(lan),500);
+			    	$('#curlang').val(langug[lan]);
+
+			    }
+			  
+		</script>		
+		<script src="https://cdn.localizejs.com/localize.js"></script>
+		<script>!function(a){if(!a.Localize){a.Localize={};for(var e=["translate","untranslate","phrase","initialize","translatePage","setLanguage","getLanguage","detectLanguage","untranslatePage","bootstrap","prefetch","on","off"],t=0;t<e.length;t++)a.Localize[e[t]]=function(){}}}(window);</script>
+
+		<script>
+		  Localize.initialize({
+		    key: 'batzv0ZzWer4Z', 
+		    rememberLanguage: true,
+		    saveNewPhrases: true,
+		    translateBody: true
+		  });
+		</script> 
+        <script src="js/mespeak.js"></script>
+        <script src="js/script.js"></script>		
+		<input type="hidden" id="curlang" value="english" />
+		<script>
+		  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+		  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+		  ga('create', 'UA-62765714-1', 'auto');
+		  ga('send', 'pageview');
+
+		</script>		
+	</body>
+</html>
